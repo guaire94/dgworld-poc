@@ -84,19 +84,3 @@ class KioskPaymentRequest extends Equatable {
     return json.encode(data);
   }
 }
-
-class KioskPaymentRequests extends Equatable {
-  List<KioskPaymentRequest> requests;
-
-  @override
-  List<Object> get props => [
-    requests
-  ];
-
-  KioskPaymentRequests(
-      {@required this.requests});
-
-  String toJson() {
-    return jsonEncode(requests);
-  }
-}

@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'kiosk/data/datasource/remote/kiosk_remote_datasource_impl.dart';
 import 'kiosk/data/repository/kiosk_repository.dart';
 import 'kiosk/data/repository/kiosk_repository_impl.dart';
-import 'kiosk/presentation/block/kiosk_block.dart';
+import 'kiosk/presentation/bloc/kiosk_bloc.dart';
 
 void main() {
   runApp(MyApp());

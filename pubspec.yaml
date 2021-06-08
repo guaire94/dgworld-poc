@@ -24,17 +24,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-
-  dio: ^3.0.9
+  shelf: ^1.1.4
+  shelf_router: ^1.0.0
+  dio: ^4.0.0
   equatable: ^1.2.5
   flutter_bloc: ^6.1.0
   connectivity: ^2.0.2
-
-  design_system:
-    git:
-      url: git@github.com:talabat-dhme/tlb-flutter-marshmallow.git
-      ref: master
-
 
 dev_dependencies:
   flutter_test:

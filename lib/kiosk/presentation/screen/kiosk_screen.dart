@@ -1,6 +1,4 @@
-import 'package:design_system/tokens_color.dart';
-import 'package:design_system/tokens_dimens.dart';
-import 'package:dgworld_poc/kiosk/presentation/block/kiosk_block.dart';
+import 'package:dgworld_poc/kiosk/presentation/bloc/kiosk_bloc.dart';
 import 'package:dgworld_poc/libraries/common/presentation/talabat_utility_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,19 +33,9 @@ class _KioskScreenState extends State<KioskScreen> {
 
   Widget _buildBody() {
     return BlocConsumer<KioskBloc, KioskState>(
-      buildWhen: _buildWhen,
-      listenWhen: _listenWhen,
       builder: _onStateChangeBuilder,
       listener: _onStateChangeListener,
     );
-  }
-
-  bool _buildWhen(KioskState previous, KioskState current) {
-    return current is LoadingState || current is LoadedState;
-  }
-
-  bool _listenWhen(KioskState previous, KioskState current) {
-    return current is NoInternetErrorState || current is ErrorState;
   }
 
   Widget _onStateChangeBuilder(
@@ -55,16 +43,46 @@ class _KioskScreenState extends State<KioskScreen> {
       KioskState state,
       ) {
     Widget body;
-    if (state is LoadingState) {
-      body = loadingWidget();
-    } else if (state is LoadedState) {
-      body = Stack(
+    if (state is WaitingForPaymentState) {
+      body = Column(
         children: [
-          SliverToBoxAdapter(
-            child: InkWell(
-              child: Text("Payment success",
-                  style: Theme.of(context).textTheme.headline1)
-            ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Wait for POST request on \n" + state.serverIp + ":" + state.serverPort + "/dgworldpos/payment"),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: Text("ServerIp: " + state.serverIp),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Port: " + state.serverPort),
+          )
+        ],
+      );
+    } else if (state is PaymentSuccessState) {
+      body = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: Text(state.paymentStatus),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text(state.referenceNumber),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text(state.paymentReceipt),
+          )
+        ],
+      );
+    } else if (state is PaymentErrorState) {
+      body = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: Text("Payment Error")
           ),
         ],
       );
@@ -82,11 +100,11 @@ class _KioskScreenState extends State<KioskScreen> {
                 margin: const EdgeInsets.all(16),
                 child:  FlatButton(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(Dimens.sizeXxs),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  color: DesignColor.colorPrimary100,
-                  textColor: DesignColor.colorNeutralWhite,
-                  splashColor: DesignColor.colorPrimary100,
+                  color:  Colors.orange,
+                  textColor: Colors.white,
+                  splashColor: Colors.orange,
                   onPressed: _pay,
                   child: Text('Try payment',
                       style: Theme.of(context).textTheme.button),
@@ -116,18 +134,6 @@ class _KioskScreenState extends State<KioskScreen> {
           },
         );
         return;
-      }
-
-      if (state is ErrorState) {
-        showAlertDialog(
-          context,
-          title: 'Error',
-          description: 'Payment failure',
-          buttonText: "Ok",
-          onButtonPressed: () {
-            dismissDialog(context);
-          },
-        );
       }
     };
   }
