@@ -65,15 +65,36 @@ class _KioskScreenState extends State<KioskScreen> {
         children: [
           Container(
             margin: const EdgeInsets.all(16),
-            child: Text(state.paymentStatus),
+            child: Text("Payment Status -> " + state.paymentStatus),
           ),
           Container(
             margin: const EdgeInsets.all(16),
-            child:  Text(state.referenceNumber),
+            child: Text("POS Order Id -> " + state.posOrderId),
           ),
           Container(
             margin: const EdgeInsets.all(16),
-            child:  Text(state.paymentReceipt),
+            child:  Text("Talabat Order Id -> " + state.talabatOrderId),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Reference Number -> " + state.referenceNumber),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Payment Receipt -> " + state.paymentReceipt),
+          )
+        ],
+      );
+    } else if (state is PaymentDeclineState) {
+      body = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: Text("Payment Status -> " + state.paymentStatus),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Error Message -> " + state.errorMessage)
           )
         ],
       );
@@ -82,8 +103,8 @@ class _KioskScreenState extends State<KioskScreen> {
         children: [
           Container(
             margin: const EdgeInsets.all(16),
-            child: Text("Payment Error")
-          ),
+            child: Text("Payment Status -> " + state.paymentStatus),
+          )
         ],
       );
     } else {

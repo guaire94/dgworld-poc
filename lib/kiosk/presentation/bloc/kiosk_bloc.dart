@@ -26,9 +26,17 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     } else if (event is KioskWaitForPaymentEvent) {
       yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
     } else if (event is KioskPaymentSuccessEvent) {
-      yield PaymentSuccessState(referenceNumber: event.referenceNumber, paymentReceipt: event.paymentReceipt, paymentStatus: event.paymentStatus);
-    } else if (event is KioskPaymentFailEvent) {
-      yield PaymentErrorState();
+      yield PaymentSuccessState(
+          posOrderId: event.posOrderId,
+          talabatOrderId: event.talabatOrderId,
+          referenceNumber: event.referenceNumber,
+          paymentReceipt: event.paymentReceipt,
+          paymentStatus: event.paymentStatus
+      );
+    } else if (event is KioskPaymentDeclineEvent) {
+      yield PaymentDeclineState(paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
+    } else if (event is KioskPaymentErrorEvent) {
+      yield PaymentErrorState(paymentStatus: event.paymentStatus);
     }
   }
 
@@ -40,13 +48,24 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       final json = jsonDecode(payload);
       final paymentStatus = json["PaymentStatus"];
 
-      if (paymentStatus == "Error") {
-        add(KioskPaymentFailEvent());
-      } else if (paymentStatus == "Success") {
+      if (paymentStatus == "Success") {
+        final posOrderId = json["POSOrderId"];
+        final talabatOrderId = json["TalabatOrderId"];
         final referenceNumber = json["ReferenceNumber"];
         final paymentReceipt = json["PaymentReceipt"];
-        final event = KioskPaymentSuccessEvent(referenceNumber: referenceNumber, paymentReceipt: paymentReceipt, paymentStatus: paymentStatus);
+        final event = KioskPaymentSuccessEvent(
+            posOrderId: posOrderId,
+            talabatOrderId: talabatOrderId,
+            referenceNumber: referenceNumber,
+            paymentReceipt: paymentReceipt,
+            paymentStatus: paymentStatus
+        );
         add(event);
+      } else if (paymentStatus == "Decline") {
+        final errorMessage = json["ErrorMessage"];
+        add(KioskPaymentDeclineEvent(paymentStatus: paymentStatus, errorMessage: errorMessage));
+      } else if (paymentStatus == "Error") {
+        add(KioskPaymentErrorEvent(paymentStatus: paymentStatus));
       }
       return Response.ok(payload);
     });
@@ -81,22 +100,46 @@ class KioskWaitForPaymentEvent extends KioskEvent {
 
 class KioskPaymentSuccessEvent extends KioskEvent {
   KioskPaymentSuccessEvent({
+    this.posOrderId,
+    this.talabatOrderId,
     this.referenceNumber,
     this.paymentStatus,
     this.paymentReceipt
   });
 
+  final String posOrderId;
+  final String talabatOrderId;
   final String referenceNumber;
   final String paymentStatus;
   final String paymentReceipt;
 
   @override
-  List<Object> get props => [referenceNumber, paymentStatus, paymentReceipt];
+  List<Object> get props => [posOrderId, talabatOrderId, referenceNumber, paymentStatus, paymentReceipt];
 }
 
-class KioskPaymentFailEvent extends KioskEvent {
+class KioskPaymentDeclineEvent extends KioskEvent {
+  KioskPaymentDeclineEvent({
+    this.paymentStatus,
+    this.errorMessage
+  });
+
+  final String paymentStatus;
+  final String errorMessage;
+
   @override
-  List<Object> get props => [];
+  List<Object> get props => [paymentStatus, errorMessage];
+}
+
+class KioskPaymentErrorEvent extends KioskEvent {
+  @override
+  KioskPaymentErrorEvent({
+    this.paymentStatus
+  });
+
+  final String paymentStatus;
+
+  @override
+  List<Object> get props => [paymentStatus];
 }
 
 // State
@@ -124,22 +167,46 @@ class WaitingForPaymentState extends KioskState {
 
 class PaymentSuccessState extends KioskState {
   PaymentSuccessState({
+    this.posOrderId,
+    this.talabatOrderId,
     this.referenceNumber,
     this.paymentStatus,
     this.paymentReceipt
   });
 
+  final String posOrderId;
+  final String talabatOrderId;
   final String referenceNumber;
   final String paymentStatus;
   final String paymentReceipt;
 
   @override
-  List<Object> get props => [referenceNumber, paymentStatus, paymentReceipt];
+  List<Object> get props => [posOrderId, talabatOrderId, referenceNumber, paymentStatus, paymentReceipt];
+}
+
+class PaymentDeclineState extends KioskState {
+  PaymentDeclineState({
+    this.paymentStatus,
+    this.errorMessage
+  });
+
+  final String paymentStatus;
+  final String errorMessage;
+
+  @override
+  List<Object> get props => [paymentStatus, errorMessage];
 }
 
 class PaymentErrorState extends KioskState {
   @override
-  List<Object> get props => [];
+  PaymentErrorState({
+    this.paymentStatus
+  });
+
+  final String paymentStatus;
+
+  @override
+  List<Object> get props => [paymentStatus];
 }
 
 class NoInternetErrorState extends KioskState {
