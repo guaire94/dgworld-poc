@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dgworld_poc/kiosk/data/dto/kiosk_payment_request.dart';
 
 class APIConfig {
@@ -7,15 +9,12 @@ class APIConfig {
   static KioskPaymentRequest createPaymentRequest() {
     final items = _createOrderItems();
     KioskPaymentRequest kioskPaymentRequest = KioskPaymentRequest(
-        orderId: "orderXXXXX",
-        referenceNumber: "",
+        POSOrderId: getRandomString(),
+        TalabatOrderId: getRandomString(),
         amount: 100,
         discount: 20,
         finalAmount: 80,
         currency: "AED",
-        discountDescription: "-20%",
-        paymentStatus: "",
-        paymentReceipt: "",
         items: items);
 
     return kioskPaymentRequest;
@@ -37,3 +36,8 @@ class ServerConfig {
   static const PAYMENT_ROUTE = '/dgworldpos/payment';
 }
 
+const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+Random _rnd = Random();
+
+String getRandomString() => String.fromCharCodes(Iterable.generate(
+    16, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
