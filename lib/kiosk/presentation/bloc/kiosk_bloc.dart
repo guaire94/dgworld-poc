@@ -12,7 +12,8 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
 class KioskBloc extends Bloc<KioskEvent, KioskState> {
-  var myIp = "";
+  var myUrl = "";
+  var posUrl = "";
 
   KioskBloc({
     this.kioskRepository,
@@ -24,17 +25,16 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     KioskEvent event,
   ) async* {
     if (event is KioskPayEvent) {
-      myIp = await _getMyIp();
-      var posIp = await _getPosIp(myIp);
-      final ableToPay = kioskRepository.pay(posIp, APIConfig.createPaymentRequest());
-      if ableToPay {
+      myUrl = await _getMyUrl();
+      posUrl = await _getPosUrl();
+      final ableToPay = await kioskRepository.pay(myUrl, APIConfig.createPaymentRequest());
+      if (ableToPay) {
         _waitForPaymentResponse();
       } else {
-        yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
-
+        yield SyncErrorState();
       }
     } else if (event is KioskWaitForPaymentEvent) {
-        yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
+        yield WaitingForPaymentState(serverUrl: myUrl);
     } else if (event is KioskPaymentSuccessEvent) {
       yield PaymentSuccessState(
           posOrderId: event.posOrderId,
@@ -48,8 +48,8 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
           paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
     } else if (event is KioskPaymentRejectedEvent) {
       yield PaymentRejectedState(paymentStatus: event.paymentStatus);
-    } else if (event is KioskPaymentErrorEvent) {
-      yield PaymentErrorState(paymentStatus: event.paymentStatus);
+    } else if (event is SyncErrorEvent) {
+      yield SyncErrorState();
     }
   }
 
@@ -82,14 +82,13 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       } else if (paymentStatus == "Rejected") {
         add(KioskPaymentRejectedEvent(paymentStatus: paymentStatus));
       } else if (paymentStatus == "Error") {
-        add(KioskPaymentErrorEvent(paymentStatus: paymentStatus));
+        add(SyncErrorEvent(paymentStatus: paymentStatus));
       }
       return Response.ok(payload);
     });
 
-    var server = await shelf_io.serve(app, myIp, ServerConfig.PORT);
-    add(KioskWaitForPaymentEvent(
-        serverIp: server.address.host, serverPort: server.port.toString()));
+    var server = await shelf_io.serve(app, myUrl, ServerConfig.PORT);
+    add(KioskWaitForPaymentEvent(serverUrl: server.address.host));
   }
 
   Future<String> _getMyIp() async {
@@ -102,8 +101,31 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     }
   }
 
-  Future<String> _getPosIp(String localIp) async {
+  Future<String> _getMyUrl() async {
+    var localIp = await _getMyIp();
+    var tabIp = "";
+    var tabPort = "";
+    var jsonText = await rootBundle.loadString('assets/ip_config.json');
+    print(jsonText);
+    var data = json.decode(jsonText);
+    var ips = data as List;
+    print(ips);
+    for (var element in ips) {
+      print("tabIp : ${element["tabIp"]}");
+      print("posIp : ${element["posIp"]}");
+      if (element["tabIp"] == localIp) {
+        tabIp = element["tabIp"];
+        tabPort = element["tabPort"];
+        break;
+      }
+    }
+    return "http://${tabIp}:${tabPort}";
+  }
+
+  Future<String> _getPosUrl() async {
+    var localIp = await _getMyIp();
     var posIp = "";
+    var posPort = "";
     var jsonText = await rootBundle.loadString('assets/ip_config.json');
     print(jsonText);
     var data = json.decode(jsonText);
@@ -114,10 +136,11 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       print("posIp : ${element["posIp"]}");
       if (element["tabIp"] == localIp) {
         posIp = element["posIp"];
+        posPort = element["posPort"];
         break;
       }
     }
-    return posIp;
+    return "http://${posIp}:${posPort}";
   }
 }
 
@@ -132,13 +155,12 @@ class KioskPayEvent extends KioskEvent {
 }
 
 class KioskWaitForPaymentEvent extends KioskEvent {
-  KioskWaitForPaymentEvent({this.serverIp, this.serverPort});
+  KioskWaitForPaymentEvent({this.serverUrl});
 
-  final String serverIp;
-  final String serverPort;
+  final String serverUrl;
 
   @override
-  List<Object> get props => [serverIp, serverPort];
+  List<Object> get props => [serverUrl];
 }
 
 class KioskPaymentSuccessEvent extends KioskEvent {
@@ -188,9 +210,9 @@ class KioskPaymentRejectedEvent extends KioskEvent {
   List<Object> get props => [paymentStatus];
 }
 
-class KioskPaymentErrorEvent extends KioskEvent {
+class SyncErrorEvent extends KioskEvent {
   @override
-  KioskPaymentErrorEvent({this.paymentStatus});
+  SyncErrorEvent({this.paymentStatus});
 
   final String paymentStatus;
 
@@ -201,21 +223,20 @@ class KioskPaymentErrorEvent extends KioskEvent {
 // State
 abstract class KioskState extends Equatable {
   const KioskState();
-}
 
-class InitialState extends KioskState {
   @override
   List<Object> get props => [];
 }
 
-class WaitingForPaymentState extends KioskState {
-  WaitingForPaymentState({this.serverIp, this.serverPort});
+class InitialState extends KioskState {}
 
-  final String serverIp;
-  final String serverPort;
+class WaitingForPaymentState extends KioskState {
+  WaitingForPaymentState({this.serverUrl});
+
+  final String serverUrl;
 
   @override
-  List<Object> get props => [serverIp, serverPort];
+  List<Object> get props => [serverUrl];
 }
 
 class PaymentSuccessState extends KioskState {
@@ -265,17 +286,6 @@ class PaymentRejectedState extends KioskState {
   List<Object> get props => [paymentStatus];
 }
 
-class PaymentErrorState extends KioskState {
-  @override
-  PaymentErrorState({this.paymentStatus});
+class SyncErrorState extends KioskState {}
 
-  final String paymentStatus;
-
-  @override
-  List<Object> get props => [paymentStatus];
-}
-
-class NoInternetErrorState extends KioskState {
-  @override
-  List<Object> get props => [];
-}
+class NoInternetErrorState extends KioskState {}
