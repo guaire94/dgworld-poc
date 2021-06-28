@@ -61,6 +61,7 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
         new Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
       final ableToPay = await kioskRepository.check(posUrl);
       if (ableToPay) {
+        _timer.cancel();
         add(KioskPayEvent());
       }
     });
