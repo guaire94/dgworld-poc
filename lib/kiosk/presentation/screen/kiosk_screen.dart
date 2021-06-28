@@ -81,6 +81,10 @@ class _KioskScreenState extends State<KioskScreen> {
           ),
           Container(
             margin: const EdgeInsets.all(16),
+            child:  Text("Transaction Id -> " + state.transactionId),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
             child:  Text("Payment Receipt -> " + state.paymentReceipt),
           )
         ],
@@ -99,6 +103,15 @@ class _KioskScreenState extends State<KioskScreen> {
         ],
       );
     } else if (state is PaymentErrorState) {
+      body = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            child: Text("Payment Status -> " + state.paymentStatus),
+          )
+        ],
+      );
+    } else if (state is PaymentRejectedState) {
       body = Column(
         children: [
           Container(
