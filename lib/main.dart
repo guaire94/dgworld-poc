@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dgworld_poc/kiosk/presentation/screen/kiosk_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
