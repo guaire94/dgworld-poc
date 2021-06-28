@@ -6,32 +6,32 @@ import 'package:bloc/bloc.dart';
 import 'package:dgworld_poc/kiosk/data/repository/kiosk_repository.dart';
 import 'package:dgworld_poc/utils/config.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/services.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
 class KioskBloc extends Bloc<KioskEvent, KioskState> {
-
   var myIp = "";
-  var posIp = "";
 
   KioskBloc({
     this.kioskRepository,
-  })  : super(InitialState());
+  }) : super(InitialState());
   final KioskRepository kioskRepository;
 
   @override
   Stream<KioskState> mapEventToState(
-      KioskEvent event,
-      ) async* {
+    KioskEvent event,
+  ) async* {
     if (event is KioskPayEvent) {
       myIp = await _getMyIp();
-      _getPosIp();
-
+      var posIp = await _getPosIp(myIp);
+      print("posIp : ${posIp}");
       kioskRepository.pay(posIp, APIConfig.createPaymentRequest());
       _waitForPaymentResponse();
     } else if (event is KioskWaitForPaymentEvent) {
-      yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
+      yield WaitingForPaymentState(
+          serverIp: event.serverIp, serverPort: event.serverPort);
     } else if (event is KioskPaymentSuccessEvent) {
       yield PaymentSuccessState(
           posOrderId: event.posOrderId,
@@ -39,10 +39,10 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
           talabatOrderId: event.talabatOrderId,
           referenceNumber: event.referenceNumber,
           paymentReceipt: event.paymentReceipt,
-          paymentStatus: event.paymentStatus
-      );
+          paymentStatus: event.paymentStatus);
     } else if (event is KioskPaymentDeclineEvent) {
-      yield PaymentDeclineState(paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
+      yield PaymentDeclineState(
+          paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
     } else if (event is KioskPaymentRejectedEvent) {
       yield PaymentRejectedState(paymentStatus: event.paymentStatus);
     } else if (event is KioskPaymentErrorEvent) {
@@ -70,12 +70,12 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
             talabatOrderId: talabatOrderId,
             referenceNumber: referenceNumber,
             paymentReceipt: paymentReceipt,
-            paymentStatus: paymentStatus
-        );
+            paymentStatus: paymentStatus);
         add(event);
       } else if (paymentStatus == "Decline") {
         final errorMessage = json["ErrorMessage"];
-        add(KioskPaymentDeclineEvent(paymentStatus: paymentStatus, errorMessage: errorMessage));
+        add(KioskPaymentDeclineEvent(
+            paymentStatus: paymentStatus, errorMessage: errorMessage));
       } else if (paymentStatus == "Rejected") {
         add(KioskPaymentRejectedEvent(paymentStatus: paymentStatus));
       } else if (paymentStatus == "Error") {
@@ -85,7 +85,8 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     });
 
     var server = await shelf_io.serve(app, myIp, ServerConfig.PORT);
-    add(KioskWaitForPaymentEvent(serverIp: server.address.host, serverPort: server.port.toString()));
+    add(KioskWaitForPaymentEvent(
+        serverIp: server.address.host, serverPort: server.port.toString()));
   }
 
   Future<String> _getMyIp() async {
@@ -98,10 +99,22 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     }
   }
 
-  String _getPosIp() {
-    final splittedIp = myIp.split(".");
-    final lastDigits = int.parse(splittedIp[3]);
-    posIp = "${splittedIp[0]}.${splittedIp[1]}.${splittedIp[2]}.${lastDigits-1}";
+  Future<String> _getPosIp(String localIp) async {
+    var posIp = "";
+    var jsonText = await rootBundle.loadString('assets/ip_config.json');
+    print(jsonText);
+    var data = json.decode(jsonText);
+    var ips = data as List;
+    print(ips);
+    for (var element in ips) {
+      print("tabIp : ${element["tabIp"]}");
+      print("posIp : ${element["posIp"]}");
+      if (element["tabIp"] == localIp) {
+        posIp = element["posIp"];
+        break;
+      }
+    }
+    return posIp;
   }
 }
 
@@ -116,10 +129,7 @@ class KioskPayEvent extends KioskEvent {
 }
 
 class KioskWaitForPaymentEvent extends KioskEvent {
-  KioskWaitForPaymentEvent({
-    this.serverIp,
-    this.serverPort
-  });
+  KioskWaitForPaymentEvent({this.serverIp, this.serverPort});
 
   final String serverIp;
   final String serverPort;
@@ -129,14 +139,13 @@ class KioskWaitForPaymentEvent extends KioskEvent {
 }
 
 class KioskPaymentSuccessEvent extends KioskEvent {
-  KioskPaymentSuccessEvent({
-    this.posOrderId,
-    this.transactionId,
-    this.talabatOrderId,
-    this.referenceNumber,
-    this.paymentStatus,
-    this.paymentReceipt
-  });
+  KioskPaymentSuccessEvent(
+      {this.posOrderId,
+      this.transactionId,
+      this.talabatOrderId,
+      this.referenceNumber,
+      this.paymentStatus,
+      this.paymentReceipt});
 
   final String posOrderId;
   final String transactionId;
@@ -146,14 +155,18 @@ class KioskPaymentSuccessEvent extends KioskEvent {
   final String paymentReceipt;
 
   @override
-  List<Object> get props => [posOrderId, transactionId, talabatOrderId, referenceNumber, paymentStatus, paymentReceipt];
+  List<Object> get props => [
+        posOrderId,
+        transactionId,
+        talabatOrderId,
+        referenceNumber,
+        paymentStatus,
+        paymentReceipt
+      ];
 }
 
 class KioskPaymentDeclineEvent extends KioskEvent {
-  KioskPaymentDeclineEvent({
-    this.paymentStatus,
-    this.errorMessage
-  });
+  KioskPaymentDeclineEvent({this.paymentStatus, this.errorMessage});
 
   final String paymentStatus;
   final String errorMessage;
@@ -164,9 +177,7 @@ class KioskPaymentDeclineEvent extends KioskEvent {
 
 class KioskPaymentRejectedEvent extends KioskEvent {
   @override
-  KioskPaymentRejectedEvent({
-    this.paymentStatus
-  });
+  KioskPaymentRejectedEvent({this.paymentStatus});
 
   final String paymentStatus;
 
@@ -176,9 +187,7 @@ class KioskPaymentRejectedEvent extends KioskEvent {
 
 class KioskPaymentErrorEvent extends KioskEvent {
   @override
-  KioskPaymentErrorEvent({
-    this.paymentStatus
-  });
+  KioskPaymentErrorEvent({this.paymentStatus});
 
   final String paymentStatus;
 
@@ -197,10 +206,7 @@ class InitialState extends KioskState {
 }
 
 class WaitingForPaymentState extends KioskState {
-  WaitingForPaymentState({
-    this.serverIp,
-    this.serverPort
-  });
+  WaitingForPaymentState({this.serverIp, this.serverPort});
 
   final String serverIp;
   final String serverPort;
@@ -210,14 +216,13 @@ class WaitingForPaymentState extends KioskState {
 }
 
 class PaymentSuccessState extends KioskState {
-  PaymentSuccessState({
-    this.posOrderId,
-    this.transactionId,
-    this.talabatOrderId,
-    this.referenceNumber,
-    this.paymentStatus,
-    this.paymentReceipt
-  });
+  PaymentSuccessState(
+      {this.posOrderId,
+      this.transactionId,
+      this.talabatOrderId,
+      this.referenceNumber,
+      this.paymentStatus,
+      this.paymentReceipt});
 
   final String posOrderId;
   final String transactionId;
@@ -227,14 +232,18 @@ class PaymentSuccessState extends KioskState {
   final String paymentReceipt;
 
   @override
-  List<Object> get props => [posOrderId, transactionId, talabatOrderId, referenceNumber, paymentStatus, paymentReceipt];
+  List<Object> get props => [
+        posOrderId,
+        transactionId,
+        talabatOrderId,
+        referenceNumber,
+        paymentStatus,
+        paymentReceipt
+      ];
 }
 
 class PaymentDeclineState extends KioskState {
-  PaymentDeclineState({
-    this.paymentStatus,
-    this.errorMessage
-  });
+  PaymentDeclineState({this.paymentStatus, this.errorMessage});
 
   final String paymentStatus;
   final String errorMessage;
@@ -245,9 +254,7 @@ class PaymentDeclineState extends KioskState {
 
 class PaymentRejectedState extends KioskState {
   @override
-  PaymentRejectedState({
-    this.paymentStatus
-  });
+  PaymentRejectedState({this.paymentStatus});
 
   final String paymentStatus;
 
@@ -257,9 +264,7 @@ class PaymentRejectedState extends KioskState {
 
 class PaymentErrorState extends KioskState {
   @override
-  PaymentErrorState({
-    this.paymentStatus
-  });
+  PaymentErrorState({this.paymentStatus});
 
   final String paymentStatus;
 
