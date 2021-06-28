@@ -7,10 +7,10 @@ import 'kiosk_remote_datasource.dart';
 class KioskRemoteDataSourceImpl extends KioskRemoteDataSource {
 
   @override
-  Future<void> pay(KioskPaymentRequest request) async {
+  Future<void> pay(String posIp, KioskPaymentRequest request) async {
     final Dio dio = Dio();
 
-    const url = APIConfig.URL + APIConfig.PAY_ROUTE;
+    final url = posIp + APIConfig.PAY_ROUTE;
 
     dio.post(url, data: request.toJson());
   }
