@@ -48,15 +48,11 @@ class _KioskScreenState extends State<KioskScreen> {
         children: [
           Container(
             margin: const EdgeInsets.all(16),
-            child:  Text("Wait for POST request on \n" + state.serverIp + ":" + state.serverPort + "/dgworldpos/payment"),
+            child:  Text("Wait for POST request on \n" + state.serverUrl + "/dgworldpos/payment"),
           ),
           Container(
             margin: const EdgeInsets.all(16),
-            child: Text("ServerIp: " + state.serverIp),
-          ),
-          Container(
-            margin: const EdgeInsets.all(16),
-            child:  Text("Port: " + state.serverPort),
+            child: Text("ServerUrl: " + state.serverUrl),
           )
         ],
       );
@@ -102,13 +98,27 @@ class _KioskScreenState extends State<KioskScreen> {
           )
         ],
       );
-    } else if (state is PaymentErrorState) {
+    } else if (state is SyncErrorState) {
       body = Column(
         children: [
           Container(
             margin: const EdgeInsets.all(16),
-            child: Text("Payment Status -> " + state.paymentStatus),
-          )
+            child: Text("POS terminal not sync with the tablet..."),
+          ),
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  FlatButton(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              color:  Colors.orange,
+              textColor: Colors.white,
+              splashColor: Colors.orange,
+              onPressed: _pay,
+              child: Text('Try again',
+                  style: Theme.of(context).textTheme.button),
+            ),
+          ),
         ],
       );
     } else if (state is PaymentRejectedState) {

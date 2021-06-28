@@ -12,9 +12,19 @@ class KioskRepositoryImpl extends KioskRepository {
   final KioskRemoteDataSource _remoteDataSource;
 
   @override
-  Future<void> pay(String posIp, KioskPaymentRequest request) async {
+  Future<bool> pay(String posIp, KioskPaymentRequest request) async {
     try {
       final result = await _remoteDataSource.pay(posIp, request);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> check(String posIp) async {
+    try {
+      final result = await _remoteDataSource.check(posIp);
       return result;
     } catch (e) {
       rethrow;
