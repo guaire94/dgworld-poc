@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:dgworld_poc/kiosk/data/repository/kiosk_repository.dart';
@@ -11,6 +12,9 @@ import 'package:shelf_router/shelf_router.dart';
 
 class KioskBloc extends Bloc<KioskEvent, KioskState> {
 
+  var myIp = "";
+  var posIp = "";
+
   KioskBloc({
     this.kioskRepository,
   })  : super(InitialState());
@@ -21,7 +25,10 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       KioskEvent event,
       ) async* {
     if (event is KioskPayEvent) {
-      kioskRepository.pay(APIConfig.createPaymentRequest());
+      myIp = await _getMyIp();
+      _getPosIp();
+
+      kioskRepository.pay(posIp, APIConfig.createPaymentRequest());
       _waitForPaymentResponse();
     } else if (event is KioskWaitForPaymentEvent) {
       yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
@@ -77,8 +84,24 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       return Response.ok(payload);
     });
 
-    var server = await shelf_io.serve(app, ServerConfig.URL, ServerConfig.PORT);
+    var server = await shelf_io.serve(app, myIp, ServerConfig.PORT);
     add(KioskWaitForPaymentEvent(serverIp: server.address.host, serverPort: server.port.toString()));
+  }
+
+  Future<String> _getMyIp() async {
+    for (var interface in await NetworkInterface.list()) {
+      for (var addr in interface.addresses) {
+        if (addr.type.name == "IPv4") {
+          return addr.address;
+        }
+      }
+    }
+  }
+
+  String _getPosIp() {
+    final splittedIp = myIp.split(".");
+    final lastDigits = int.parse(splittedIp[3]);
+    posIp = "${splittedIp[0]}.${splittedIp[1]}.${splittedIp[2]}.${lastDigits-1}";
   }
 }
 

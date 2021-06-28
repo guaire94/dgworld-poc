@@ -31,7 +31,6 @@ class OrderItem extends Equatable {
 }
 
 class KioskPaymentRequest extends Equatable {
-  String POSOrderId;
   String TalabatOrderId;
   double amount;
   double discount;
@@ -41,7 +40,6 @@ class KioskPaymentRequest extends Equatable {
 
   @override
   List<Object> get props => [
-    POSOrderId,
     TalabatOrderId,
     amount,
     discount,
@@ -51,8 +49,7 @@ class KioskPaymentRequest extends Equatable {
   ];
 
   KioskPaymentRequest(
-      {@required this.POSOrderId,
-        @required this.TalabatOrderId,
+      { @required this.TalabatOrderId,
         @required this.amount,
         @required this.discount,
         @required this.finalAmount,
@@ -61,7 +58,6 @@ class KioskPaymentRequest extends Equatable {
 
   String toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data["POSOrderId"] = POSOrderId;
     data["TalabatOrderId"] = TalabatOrderId;
     data["Amount"] = amount;
     data["Discount"] = discount;
