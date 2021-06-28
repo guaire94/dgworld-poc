@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:dgworld_poc/kiosk/data/dto/kiosk_payment_request.dart';
 
 class APIConfig {
-  static const PORT = 56200;
   static const PAY_ROUTE = '/dgworldpos/pay';
   static const CHECK_ROUTE = '/dgworldpos/check';
 
@@ -31,7 +30,6 @@ class APIConfig {
 }
 
 class ServerConfig {
-  static const PORT = 19000;
   static const PAYMENT_ROUTE = '/dgworldpos/payment';
 }
 
