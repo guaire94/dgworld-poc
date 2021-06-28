@@ -103,22 +103,8 @@ class _KioskScreenState extends State<KioskScreen> {
         children: [
           Container(
             margin: const EdgeInsets.all(16),
-            child: Text("POS terminal not sync with the tablet..."),
-          ),
-          Container(
-            margin: const EdgeInsets.all(16),
-            child:  FlatButton(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              color:  Colors.orange,
-              textColor: Colors.white,
-              splashColor: Colors.orange,
-              onPressed: _pay,
-              child: Text('Try again',
-                  style: Theme.of(context).textTheme.button),
-            ),
-          ),
+            child: Text("POS terminal not sync with the tablet. Trying to sync again..."),
+          )
         ],
       );
     } else if (state is PaymentRejectedState) {

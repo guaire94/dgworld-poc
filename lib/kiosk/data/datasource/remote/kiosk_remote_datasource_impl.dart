@@ -7,9 +7,9 @@ import 'kiosk_remote_datasource.dart';
 class KioskRemoteDataSourceImpl extends KioskRemoteDataSource {
 
   @override
-  Future<bool> pay(String posIp, KioskPaymentRequest request) async {
+  Future<bool> pay(String posUrl, KioskPaymentRequest request) async {
     final Dio dio = Dio();
-    final url = "http://${posIp}:${APIConfig.PORT}${APIConfig.PAY_ROUTE}";
+    final url = "${posUrl}${APIConfig.PAY_ROUTE}";
 
     try {
       final Response response = await dio.post(url, data: request.toJson());
@@ -21,9 +21,9 @@ class KioskRemoteDataSourceImpl extends KioskRemoteDataSource {
   }
 
   @override
-  Future<bool> check(String posIp) async {
+  Future<bool> check(String posUrl) async {
     final Dio dio = Dio();
-    final url = "http://${posIp}:${APIConfig.PORT}${APIConfig.CHECK_ROUTE}";
+    final url = "${posUrl}${APIConfig.CHECK_ROUTE}";
 
     try {
       final Response response = await dio.get(url);

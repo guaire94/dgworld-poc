@@ -15,6 +15,8 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
   var myUrl = "";
   var posUrl = "";
 
+  Timer _timer;
+
   KioskBloc({
     this.kioskRepository,
   }) : super(InitialState());
@@ -27,11 +29,12 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     if (event is KioskPayEvent) {
       myUrl = await _getMyUrl();
       posUrl = await _getPosUrl();
-      final ableToPay = await kioskRepository.pay(myUrl, APIConfig.createPaymentRequest());
+      final ableToPay = await kioskRepository.pay(posUrl, APIConfig.createPaymentRequest());
       if (ableToPay) {
         _waitForPaymentResponse();
       } else {
         yield SyncErrorState();
+        _waitForCheckSuccess();
       }
     } else if (event is KioskWaitForPaymentEvent) {
         yield WaitingForPaymentState(serverUrl: myUrl);
@@ -51,6 +54,16 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     } else if (event is SyncErrorEvent) {
       yield SyncErrorState();
     }
+  }
+
+  void _waitForCheckSuccess() {
+    _timer =
+        new Timer.periodic(const Duration(seconds: 5), (Timer timer) async {
+      final ableToPay = await kioskRepository.check(posUrl);
+      if (ableToPay) {
+        add(KioskPayEvent());
+      }
+    });
   }
 
   void _waitForPaymentResponse() async {
@@ -87,7 +100,9 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       return Response.ok(payload);
     });
 
-    var server = await shelf_io.serve(app, myUrl, ServerConfig.PORT);
+    final myPort = await _getMyPort();
+    final myIp = await _getMyIp();
+    var server = await shelf_io.serve(app, myIp, int.parse(myPort));
     add(KioskWaitForPaymentEvent(serverUrl: server.address.host));
   }
 
@@ -101,10 +116,30 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     }
   }
 
+  Future<String> _getMyPort() async {
+    print("_getMyPort - ");
+    var localIp = await _getMyIp();
+    var tabPort = "";
+    var jsonText = await rootBundle.loadString('assets/ip_config.json');
+    print(jsonText);
+    var data = json.decode(jsonText);
+    var ips = data as List;
+    print(ips);
+    for (var element in ips) {
+      print("tabPort : ${element["tabPort"]}");
+      if (element["tabIp"] == localIp) {
+        tabPort = element["tabPort"];
+        break;
+      }
+    }
+    return tabPort;
+  }
+
   Future<String> _getMyUrl() async {
+    print("_getMyUrl - ");
     var localIp = await _getMyIp();
     var tabIp = "";
-    var tabPort = "";
+    var tabPort = await _getMyPort();
     var jsonText = await rootBundle.loadString('assets/ip_config.json');
     print(jsonText);
     var data = json.decode(jsonText);
@@ -115,14 +150,15 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
       print("posIp : ${element["posIp"]}");
       if (element["tabIp"] == localIp) {
         tabIp = element["tabIp"];
-        tabPort = element["tabPort"];
         break;
       }
     }
+    print("http://${tabIp}:${tabPort}");
     return "http://${tabIp}:${tabPort}";
   }
 
   Future<String> _getPosUrl() async {
+    print("_getPosUrl - ");
     var localIp = await _getMyIp();
     var posIp = "";
     var posPort = "";
@@ -140,6 +176,7 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
         break;
       }
     }
+    print("http://${posIp}:${posPort}");
     return "http://${posIp}:${posPort}";
   }
 }
