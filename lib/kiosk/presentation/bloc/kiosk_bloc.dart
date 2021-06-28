@@ -26,12 +26,15 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     if (event is KioskPayEvent) {
       myIp = await _getMyIp();
       var posIp = await _getPosIp(myIp);
-      print("posIp : ${posIp}");
-      kioskRepository.pay(posIp, APIConfig.createPaymentRequest());
-      _waitForPaymentResponse();
+      final ableToPay = kioskRepository.pay(posIp, APIConfig.createPaymentRequest());
+      if ableToPay {
+        _waitForPaymentResponse();
+      } else {
+        yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
+
+      }
     } else if (event is KioskWaitForPaymentEvent) {
-      yield WaitingForPaymentState(
-          serverIp: event.serverIp, serverPort: event.serverPort);
+        yield WaitingForPaymentState(serverIp: event.serverIp, serverPort: event.serverPort);
     } else if (event is KioskPaymentSuccessEvent) {
       yield PaymentSuccessState(
           posOrderId: event.posOrderId,
