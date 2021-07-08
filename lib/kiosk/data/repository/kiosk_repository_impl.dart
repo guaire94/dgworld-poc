@@ -13,6 +13,7 @@ class KioskRepositoryImpl extends KioskRepository {
 
   @override
   Future<bool> pay(String posIp, KioskPaymentRequest request) async {
+    return true; // Only on case of local testing
     try {
       final result = await _remoteDataSource.pay(posIp, request);
       return result;
