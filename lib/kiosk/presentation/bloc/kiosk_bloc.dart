@@ -111,6 +111,8 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     for (var interface in await NetworkInterface.list()) {
       for (var addr in interface.addresses) {
         if (addr.type.name == "IPv4") {
+          print("You should use this IP as tabIp in ip_config.json and also as TalabatServer in postman env");
+          print(addr.address);
           return addr.address;
         }
       }
@@ -118,16 +120,12 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
   }
 
   Future<String> _getMyPort() async {
-    print("_getMyPort - ");
     var localIp = await _getMyIp();
     var tabPort = "";
     var jsonText = await rootBundle.loadString('assets/ip_config.json');
-    print(jsonText);
     var data = json.decode(jsonText);
     var ips = data as List;
-    print(ips);
     for (var element in ips) {
-      print("tabPort : ${element["tabPort"]}");
       if (element["tabIp"] == localIp) {
         tabPort = element["tabPort"];
         break;
@@ -137,47 +135,35 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
   }
 
   Future<String> _getMyUrl() async {
-    print("_getMyUrl - ");
     var localIp = await _getMyIp();
     var tabIp = "";
     var tabPort = await _getMyPort();
     var jsonText = await rootBundle.loadString('assets/ip_config.json');
-    print(jsonText);
     var data = json.decode(jsonText);
     var ips = data as List;
-    print(ips);
     for (var element in ips) {
-      print("tabIp : ${element["tabIp"]}");
-      print("posIp : ${element["posIp"]}");
       if (element["tabIp"] == localIp) {
         tabIp = element["tabIp"];
         break;
       }
     }
-    print("http://${tabIp}:${tabPort}");
     return "http://${tabIp}:${tabPort}";
   }
 
   Future<String> _getPosUrl() async {
-    print("_getPosUrl - ");
     var localIp = await _getMyIp();
     var posIp = "";
     var posPort = "";
     var jsonText = await rootBundle.loadString('assets/ip_config.json');
-    print(jsonText);
     var data = json.decode(jsonText);
     var ips = data as List;
-    print(ips);
     for (var element in ips) {
-      print("tabIp : ${element["tabIp"]}");
-      print("posIp : ${element["posIp"]}");
       if (element["tabIp"] == localIp) {
         posIp = element["posIp"];
         posPort = element["posPort"];
         break;
       }
     }
-    print("http://${posIp}:${posPort}");
     return "http://${posIp}:${posPort}";
   }
 }
