@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 
 import 'order_item.dart';
 
-class KioskPaymentRequest extends Equatable {
+class KioskPrintRequest extends Equatable {
   String TalabatOrderId;
   double amount;
   double discount;
   double finalAmount;
+  String currency;
   List<OrderItem> items;
 
   @override
@@ -18,14 +19,16 @@ class KioskPaymentRequest extends Equatable {
     amount,
     discount,
     finalAmount,
+    currency,
     items
   ];
 
-  KioskPaymentRequest(
+  KioskPrintRequest(
       { @required this.TalabatOrderId,
         @required this.amount,
         @required this.discount,
         @required this.finalAmount,
+        @required this.currency,
         @required this.items});
 
   String toJson() {
@@ -34,6 +37,7 @@ class KioskPaymentRequest extends Equatable {
     data["Amount"] = amount;
     data["Discount"] = discount;
     data["FinalAmount"] = finalAmount;
+    data["Currency"] = currency;
     data["OrderDetails"] = jsonEncode(items);
 
     // QRCode needed
