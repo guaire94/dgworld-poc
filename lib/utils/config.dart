@@ -26,10 +26,22 @@ class APIConfig {
     return kioskPaymentRequest;
   }
 
-  static KioskPrintRequest createPrintRequest() {
+  static KioskPrintRequest createPrintRequest(
+    String TalabatOrderId,
+    String posOrderId,
+    String referenceNumber,
+    String paymentStatus,
+    String dgworldTransactionId,
+    String paymentReceipt,
+  ) {
     final items = _createOrderItems();
     KioskPrintRequest kioskPrintRequest = KioskPrintRequest(
-        TalabatOrderId: getRandomString(),
+        TalabatOrderId: TalabatOrderId,
+        posOrderId: posOrderId,
+        referenceNumber: referenceNumber,
+        paymentStatus: paymentStatus,
+        dgworldTransactionId: dgworldTransactionId,
+        paymentReceipt: paymentReceipt,
         amount: 100,
         discount: 20,
         finalAmount: 80,

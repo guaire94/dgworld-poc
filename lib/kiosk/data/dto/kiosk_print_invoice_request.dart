@@ -6,38 +6,54 @@ import 'package:flutter/material.dart';
 import 'order_item.dart';
 
 class KioskPrintRequest extends Equatable {
+  String posOrderId;
   String TalabatOrderId;
+  String referenceNumber;
+  String paymentStatus;
+  String dgworldTransactionId;
+  String paymentReceipt;
   double amount;
   double discount;
   double finalAmount;
-  String currency;
   List<OrderItem> items;
 
   @override
   List<Object> get props => [
+    posOrderId,
     TalabatOrderId,
+    referenceNumber,
+    paymentStatus,
+    dgworldTransactionId,
+    paymentReceipt,
     amount,
     discount,
     finalAmount,
-    currency,
     items
   ];
 
   KioskPrintRequest(
-      { @required this.TalabatOrderId,
+      { @required this.posOrderId,
+        @required this.TalabatOrderId,
+        @required this.referenceNumber,
+        @required this.paymentStatus,
+        @required this.dgworldTransactionId,
+        @required this.paymentReceipt,
         @required this.amount,
         @required this.discount,
         @required this.finalAmount,
-        @required this.currency,
         @required this.items});
 
   String toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data["POSOrderId"] = posOrderId;
     data["TalabatOrderId"] = TalabatOrderId;
+    data["ReferenceNumber"] = referenceNumber;
+    data["PaymentStatus"] = paymentStatus;
+    data["TransactionId"] = dgworldTransactionId;
+    data["PaymentReceipt"] = paymentReceipt;
     data["Amount"] = amount;
     data["Discount"] = discount;
     data["FinalAmount"] = finalAmount;
-    data["Currency"] = currency;
     data["OrderDetails"] = jsonEncode(items);
 
     // QRCode needed
