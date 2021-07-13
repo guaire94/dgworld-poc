@@ -85,7 +85,17 @@ class _KioskScreenState extends State<KioskScreen> {
           )
         ],
       );
-    } else if (state is PaymentDeclineState) {
+    } else if (state is PrintSuccessState) {
+      body = Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            child:  Text("Print sucess - You can retrieve your printed qrcode"),
+          )
+        ],
+      );
+      }
+      else if (state is PaymentDeclineState) {
       body = Column(
         children: [
           Container(

@@ -1,10 +1,18 @@
 import 'dart:math';
 
 import 'package:dgworld_poc/kiosk/data/dto/kiosk_payment_request.dart';
+import 'package:dgworld_poc/kiosk/data/dto/kiosk_print_invoice_request.dart';
+import 'package:dgworld_poc/kiosk/data/dto/order_item.dart';
 
 class APIConfig {
+  // DGWorld Endpoint
   static const PAY_ROUTE = '/dgworldpos/pay';
+  static const PRINT_ROUTE = '/dgworldpos/print';
   static const CHECK_ROUTE = '/dgworldpos/check';
+
+  // TalabatPay Endpoint
+  static const VALIDATE_ROUTE = '/api/v1/payments/validate';
+
 
   static KioskPaymentRequest createPaymentRequest() {
     final items = _createOrderItems();
@@ -13,10 +21,21 @@ class APIConfig {
         amount: 100,
         discount: 20,
         finalAmount: 80,
-        currency: "AED",
         items: items);
 
     return kioskPaymentRequest;
+  }
+
+  static KioskPrintRequest createPrintRequest() {
+    final items = _createOrderItems();
+    KioskPrintRequest kioskPrintRequest = KioskPrintRequest(
+        TalabatOrderId: getRandomString(),
+        amount: 100,
+        discount: 20,
+        finalAmount: 80,
+        items: items);
+
+    return kioskPrintRequest;
   }
 
   static List<OrderItem> _createOrderItems() {

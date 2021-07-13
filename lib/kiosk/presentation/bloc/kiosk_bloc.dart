@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:dgworld_poc/kiosk/data/dto/kiosk_validate_request.dart';
 import 'package:dgworld_poc/kiosk/data/repository/kiosk_repository.dart';
 import 'package:dgworld_poc/utils/config.dart';
 import 'package:equatable/equatable.dart';
@@ -46,6 +47,29 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
           referenceNumber: event.referenceNumber,
           paymentReceipt: event.paymentReceipt,
           paymentStatus: event.paymentStatus);
+
+      final amount = APIConfig.createPaymentRequest().amount;
+      final talabatOrderId = int.parse(event.talabatOrderId);
+      final transactionId = int.parse(event.transactionId);
+      final request = KioskValidateRequest(
+          receiptUrl: event.paymentReceipt,
+          orderId: talabatOrderId,
+          transactionId: transactionId,
+          referenceNumber: event.referenceNumber,
+          paymentValidationResponse: "",
+          amount: amount,
+          paymentStatus: 0,
+      );
+      await kioskRepository.validate(request);
+
+      final ableToPrint = await kioskRepository.printReceipt(posUrl, APIConfig.createPrintRequest());
+      if (ableToPrint) {
+        yield PrintSuccessState();
+      } else {
+        yield SyncErrorState();
+        _waitForCheckSuccess();
+      }
+
     } else if (event is KioskPaymentDeclineEvent) {
       yield PaymentDeclineState(
           paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
@@ -289,6 +313,8 @@ class PaymentSuccessState extends KioskState {
         paymentReceipt
       ];
 }
+
+class PrintSuccessState extends KioskState {}
 
 class PaymentDeclineState extends KioskState {
   PaymentDeclineState({this.paymentStatus, this.errorMessage});
