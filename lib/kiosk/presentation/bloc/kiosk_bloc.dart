@@ -47,29 +47,8 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
           referenceNumber: event.referenceNumber,
           paymentReceipt: event.paymentReceipt,
           paymentStatus: event.paymentStatus);
-
-      final amount = APIConfig.createPaymentRequest().amount;
-      final talabatOrderId = int.parse(event.talabatOrderId);
-      final transactionId = int.parse(event.transactionId);
-      final request = KioskValidateRequest(
-          receiptUrl: event.paymentReceipt,
-          orderId: talabatOrderId,
-          transactionId: transactionId,
-          referenceNumber: event.referenceNumber,
-          paymentValidationResponse: "",
-          amount: amount,
-          paymentStatus: 0,
-      );
-      await kioskRepository.validate(request);
-
-      final ableToPrint = await kioskRepository.printReceipt(posUrl, APIConfig.createPrintRequest());
-      if (ableToPrint) {
-        yield PrintSuccessState();
-      } else {
-        yield SyncErrorState();
-        _waitForCheckSuccess();
-      }
-
+      _validateOrder(event); // TODO: verify everything's good before printing
+      yield await _printReceipt(event);
     } else if (event is KioskPaymentDeclineEvent) {
       yield PaymentDeclineState(
           paymentStatus: event.paymentStatus, errorMessage: event.errorMessage);
@@ -131,6 +110,42 @@ class KioskBloc extends Bloc<KioskEvent, KioskState> {
     add(KioskWaitForPaymentEvent(serverUrl: server.address.host));
   }
 
+  void _validateOrder(KioskPaymentSuccessEvent event) async {
+    final amount = APIConfig.createPaymentRequest().amount;
+    final talabatOrderId = int.parse(event.talabatOrderId);
+
+    final request = KioskValidateRequest(
+      receiptUrl: event.paymentReceipt,
+      orderId: talabatOrderId,
+      transactionId: 123456, // TODO: need to be the transactionId from place order API
+      referenceNumber: event.referenceNumber,
+      paymentValidationResponse: "",
+      amount: amount,
+      paymentStatus: 0,
+    );
+    await kioskRepository.validate(request);
+  }
+
+  Future<KioskState> _printReceipt(KioskPaymentSuccessEvent event) async {
+    final request = APIConfig.createPrintRequest(
+        event.talabatOrderId,
+        event.posOrderId,
+        event.referenceNumber,
+        event.paymentStatus,
+        event.transactionId,
+        event.paymentReceipt,
+    );
+    final ableToPrint = await kioskRepository.printReceipt(posUrl, request);
+    if (ableToPrint) {
+      return PrintSuccessState();
+    } else {
+      _waitForCheckSuccess();
+      return SyncErrorState();
+    }
+}
+
+
+  // Helpers
   Future<String> _getMyIp() async {
     for (var interface in await NetworkInterface.list()) {
       for (var addr in interface.addresses) {
